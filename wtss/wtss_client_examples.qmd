@@ -1,0 +1,152 @@
+---
+title: "WTSS Client Usage Examples"
+author: "Your Name"
+date: "`r Sys.Date()`"
+format: html
+---
+
+# Introduction
+
+This document provides examples of how to use the `WTSSClient` defined in `wtss_client.R` to retrieve time series data and visualize it using Plotly.
+
+# Load the WTSS Client
+
+Load the `wtss_client.R` file and initialize the WTSS client.
+
+```{r}
+
+source("wtss/wtss_client.R")
+
+# Initialize the WTSS client
+wtss_inpe <- "https://data.inpe.br/bdc/wtss/v4/"
+client <- WTSSClient$new(base_url = wtss_inpe)
+
+# Get and display the capabilities
+capabilities <- client$get_capabilities()
+
+# Display WTSS version
+cat("WTSS Version:", capabilities$wtss_version, "\n\n")
+
+# Display documentation info
+cat("Documentation:\n")
+cat("  Title:", capabilities$documentation$title, "\n")
+cat("  URL:", capabilities$documentation$href, "\n\n")
+
+# Display available collections
+cat("Available Collections (", capabilities$collection_count, "):\n")
+for (collection in capabilities$available_collections) {
+  cat("  -", collection$name, "\n")
+  cat("    URL:", collection$href, "\n")
+}
+
+# Get detailed information about a specific collection
+collection_info <- client$get_collection_info("CBERS-WFI-8D-1")
+
+# Display collection information
+cat("\nCollection Details for", collection_info$name, "Version", collection_info$version, "\n")
+cat("\nTitle:", collection_info$title, "\n")
+cat("\nDescription:", collection_info$description, "\n")
+
+# Display temporal coverage
+cat("\nTemporal Coverage:\n")
+cat("  Start Date:", collection_info$temporal_coverage$start, "\n")
+cat("  End Date:", collection_info$temporal_coverage$end, "\n")
+cat("  Total Available Dates:", collection_info$temporal_coverage$total_dates, "\n")
+
+# Display band information
+cat("\nAvailable Bands:\n")
+for (band in collection_info$bands) {
+  cat("\n  Band:", band$name, "(", band$common_name, ")\n")
+  cat("    Data Type:", band$data_type, "\n")
+  cat("    Scale Factor:", band$scale, "\n")
+  cat("    NoData Value:", band$nodata, "\n")
+  cat("    Valid Range:", band$valid_range[1], "to", band$valid_range[2], "\n")
+  cat("    Resolution:", band$resolution["x"], "x", band$resolution["y"], "meters\n")
+}
+
+# Display spatial information
+cat("\nSpatial Information:\n")
+cat("  Projection:", collection_info$projection, "\n")
+cat("  Grid Size:", collection_info$grid_size$x, "x", collection_info$grid_size$y, "pixels\n")
+
+```
+
+# Example: Retrieve Time Series Data
+
+In this example, we will retrieve time series data for a specific collection and plot it.
+
+
+## MODIS Example:
+```{r}
+# Define parameters
+collectionId <- "mod13q1-6.1"  # Replace with your collection ID
+geom <- list(type = "Point", coordinates = c(-47.9292, -15.7801))  # Example coordinates
+attributes <- c("EVI", "NDVI")  # Replace with your attributes
+start_datetime <- "2018-01-01T00:00:00Z"
+end_datetime <- "2020-12-31T00:00:00Z"
+
+# Retrieve time series data
+time_series_data <- client$timeseries_get(collectionId, geom, attributes, start_datetime, end_datetime)
+
+# Check the structure of the data
+str(time_series_data)
+```
+
+## SENTINEL Example:
+```{r}
+# Define parameters
+collectionId <- "S2-16D-2"  # Replace with your collection ID
+geom <- list(type = "Point", coordinates = c(-47.9292, -15.7801))  # Example coordinates
+attributes <- c("EVI", "NDVI")  # Replace with your attributes
+start_datetime <- "2018-01-01T00:00:00Z"
+end_datetime <- "2020-12-31T00:00:00Z"
+
+# Retrieve time series data
+time_series_data <- client$timeseries_get(collectionId, geom, attributes, start_datetime, end_datetime)
+
+# Check the structure of the data
+str(time_series_data)
+```
+
+## LANDSAT Example:
+```{r}
+# Define parameters
+collectionId <- "LANDSAT-16D-1"  # Replace with your collection ID
+geom <- list(type = "Point", coordinates = c(-47.9292, -15.7801))  # Example coordinates
+attributes <- c("EVI", "NDVI")  # Replace with your attributes
+start_datetime <- "2018-01-01T00:00:00Z"
+end_datetime <- "2020-12-31T00:00:00Z"
+
+# Retrieve time series data
+time_series_data <- client$timeseries_get(collectionId, geom, attributes, start_datetime, end_datetime)
+
+# Check the structure of the data
+str(time_series_data)
+```
+
+# Plotting the Time Series Data
+
+Now that we have the time series data, we can plot it using Plotly.
+
+```{r}
+library(plotly)
+
+# Convert the time series data to a data frame
+df <- parseGetTimeSeriesToDF(time_series_data)
+
+# Create a plotly plot
+plot <- plot_ly(df, x = ~date) %>%
+  add_lines(y = ~EVI, name = "EVI", line = list(color = 'blue')) %>%
+  add_lines(y = ~NDVI, name = "NDVI", line = list(color = 'red')) %>%
+  layout(title = "Time Series Data",
+         xaxis = list(title = "Date"),
+         yaxis = list(title = "Values"),
+         legend = list(x = 0, y = 1))
+         
+# Show the plot
+plot
+```
+
+# Conclusion
+
+In this document, we demonstrated how to use the `WTSSClient` to retrieve time series data and visualize it using Plotly. You can customize the parameters and attributes based on your specific needs.
